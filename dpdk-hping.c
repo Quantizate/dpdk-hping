@@ -91,18 +91,6 @@ static int dpdk_hping_parse_args(int argc, char **argv)
             portid = (uint16_t)strtol(optarg, NULL, 10);
             break;
 
-        case 'm':
-            nb_bytes_min = (uint64_t)strtoull(optarg, NULL, 10);
-            break;
-
-        case 'n':
-            nb_bytes_max = (uint64_t)strtoull(optarg, NULL, 10);
-            break;
-
-        case 'i':
-            total_steps = (uint64_t)strtoull(optarg, NULL, 10);
-            break;
-
         case 's':
             server_mode = true;
             break;
@@ -117,13 +105,6 @@ static int dpdk_hping_parse_args(int argc, char **argv)
                    &target_ether_addr.addr_bytes[3],
                    &target_ether_addr.addr_bytes[4],
                    &target_ether_addr.addr_bytes[5]);
-            break;
-        }
-
-        case 't':
-        {
-            duration = (uint64_t)strtoull(optarg, NULL, 10);
-            timer = 1;
             break;
         }
 
@@ -301,7 +282,8 @@ static void server_main_loop(uint64_t nb_bytes)
     struct rte_ether_hdr *eth_hdr;
     struct rte_mbuf *pkts_burst[MAX_PKT_BURST];
 
-    struct rte_mbuf **pkts = malloc(nb_pkts * sizeof(struct rte_mbuf *));
+
+    struct rte_mbuf **pkts = malloc(MAX_PKT_BURST * sizeof(struct rte_mbuf *));
 
     /* wait for pong */
     while (true)
@@ -328,7 +310,7 @@ static void server_main_loop(uint64_t nb_bytes)
             nb_tx = 0;
             while (nb_tx < nb_rx_once)
             {
-                nb_tx += rte_eth_tx_burst(portid, 0, pkts + nb_tx, nb_pkts - nb_tx);
+                nb_tx += rte_eth_tx_burst(portid, 0, pkts + nb_tx, nb_rx_once - nb_tx);
             }
         }
     }
