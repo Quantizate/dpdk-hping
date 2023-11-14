@@ -117,7 +117,6 @@ void get_minavgmax(float delay_ms)
     rtt_min = delay_ms;
   if (rtt_max == 0 || delay_ms > rtt_max)
     rtt_max = delay_ms;
-  avg_counter++;
   rtt_avg = (rtt_avg * (avg_counter - 1) / avg_counter) + (delay_ms / avg_counter);
 }
 
@@ -127,7 +126,7 @@ void get_minavgmax_tsc(float delay_ms)
     rtt_min_tsc = delay_ms;
   if (rtt_max_tsc == 0 || delay_ms > rtt_max_tsc)
     rtt_max_tsc = delay_ms;
-  avg_counter++;
+
   rtt_avg_tsc = (rtt_avg_tsc * (avg_counter - 1) / avg_counter) + (delay_ms / avg_counter);
 }
 
@@ -170,6 +169,8 @@ int rtt(int *seqp, int recvport, float *delay_ms, double *rtt_tsc, double *tsc_v
       delay_usec += 1000000;
 
     *delay_ms = (delay_sec * 1000) + ((float)delay_usec / 1000);
+
+    avg_counter++;
     get_minavgmax(*delay_ms);
 
     double diff_tsc = *tsc_value - delaytable[i].tsc_value;
