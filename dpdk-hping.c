@@ -49,7 +49,6 @@ static const char short_options[] =
     "i:" /* number of interations */
     "c:" /* client mode, with MAC address */
     "s"  /* server mode */
-    "t:" /* time interval for which client pings */
     "l:" /*number of packets to be sent*/
     "W:" /*timeout interval*/
     "a:" /* server ip address */
@@ -130,7 +129,7 @@ static int dpdk_hping_parse_args(int argc, char **argv)
                    &ip_parts[1],
                    &ip_parts[2],
                    &ip_parts[3]);
-            client_ip_addr = RTE_IPV4(ip_parts[0], ip_parts[1], ip_parts[2], ip_parts[3]);
+            server_ip_addr = RTE_IPV4(ip_parts[0], ip_parts[1], ip_parts[2], ip_parts[3]);
             break;
         }
 
@@ -143,7 +142,7 @@ static int dpdk_hping_parse_args(int argc, char **argv)
                    &ip_parts[1],
                    &ip_parts[2],
                    &ip_parts[3]);
-            server_ip_addr = RTE_IPV4(ip_parts[0], ip_parts[1], ip_parts[2], ip_parts[3]);
+            client_ip_addr = RTE_IPV4(ip_parts[0], ip_parts[1], ip_parts[2], ip_parts[3]);
             break;
         }
 
@@ -193,7 +192,7 @@ static struct rte_mbuf *create_packet(unsigned pkt_size)
     return pkt;
 }
 
-/* main ping loop */
+/* main client loop */
 static void client_main_loop(uint64_t nb_bytes)
 {
     unsigned nb_rx, nb_tx;
@@ -274,14 +273,13 @@ static void client_main_loop(uint64_t nb_bytes)
     free(pkts);
 }
 
-/* main pong loop */
+/* main server loop  */
 static void server_main_loop(uint64_t nb_bytes)
 {
     unsigned nb_rx, nb_tx;
     struct rte_mbuf *m = NULL;
     struct rte_ether_hdr *eth_hdr;
     struct rte_mbuf *pkts_burst[MAX_PKT_BURST];
-
 
     struct rte_mbuf **pkts = malloc(MAX_PKT_BURST * sizeof(struct rte_mbuf *));
 

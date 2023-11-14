@@ -57,10 +57,9 @@ uint16_t src_id = -1;
 uint16_t seq_nb = 0;
 
 uint64_t data_size = 64;
+unsigned int time_out_value = 2;
 
 int delaytable_index = 0;
-
-unsigned int time_out_value = 2;
 
 struct delaytable_element
 {
@@ -68,13 +67,20 @@ struct delaytable_element
   int src;
   time_t sec;
   time_t usec;
-
-  //
   double tsc_value;
-  //
-
   int status;
 };
+
+float
+    rtt_min = 0,
+    rtt_max = 0,
+    rtt_avg = 0,
+    rtt_min_tsc = 0,
+    rtt_max_tsc = 0,
+    rtt_avg_tsc = 0,
+    ;
+
+int avg_counter = 0;
 
 volatile struct delaytable_element delaytable[TABLESIZE];
 
@@ -85,13 +91,6 @@ time_t get_usec(void)
   gettimeofday(&tmptv, NULL);
   return tmptv.tv_usec;
 }
-
-float
-    rtt_min = 0,
-    rtt_max = 0,
-    rtt_avg = 0;
-
-int avg_counter = 0;
 
 static inline uint16_t
 ck_sum(const unaligned_uint16_t *header, int header_len)
@@ -120,6 +119,16 @@ void get_minavgmax(float delay_ms)
     rtt_max = delay_ms;
   avg_counter++;
   rtt_avg = (rtt_avg * (avg_counter - 1) / avg_counter) + (delay_ms / avg_counter);
+}
+
+void get_minavgmax_tsc(float delay_ms)
+{
+  if (rtt_min_tsc == 0 || delay_ms < rtt_min_tsc)
+    rtt_min_tsc = delay_ms;
+  if (rtt_max_tsc == 0 || delay_ms > rtt_max_tsc)
+    rtt_max_tsc = delay_ms;
+  avg_counter++;
+  rtt_avg_tsc = (rtt_avg_tsc * (avg_counter - 1) / avg_counter) + (delay_ms / avg_counter);
 }
 
 int rtt(int *seqp, int recvport, float *delay_ms, double *rtt_tsc, double *tsc_value)
@@ -166,6 +175,8 @@ int rtt(int *seqp, int recvport, float *delay_ms, double *rtt_tsc, double *tsc_v
     double diff_tsc = *tsc_value - delaytable[i].tsc_value;
 
     *rtt_tsc = diff_tsc * US_PER_S / tsc_hz;
+
+    get_minavgmax_tsc(*rtt_tsc);
   }
   else
   {
@@ -176,19 +187,7 @@ int rtt(int *seqp, int recvport, float *delay_ms, double *rtt_tsc, double *tsc_v
   /* SANITY CHECK */
   if (*delay_ms < 0)
   {
-    printf("\n\nSANITY CHECK in rtt.c FAILED!\n");
-    printf("- seqnum = %d\n", *seqp);
-    printf("- status = %d\n", status);
-    printf("- get_usec() = %ld\n", (long int)get_usec());
-    printf("- delaytable.usec = %ld\n",
-           (long int)delaytable[tablepos].usec);
-    printf("- usec_delay = %ld\n", delay_usec);
-    printf("- time(NULL) = %ld\n", (long int)time(NULL));
-    printf("- delaytable.sec = %ld\n",
-           (long int)delaytable[tablepos].sec);
-    printf("- sec_delay = %ld\n", delay_sec);
-    printf("- ms_delay = %f\n", *delay_ms);
-    printf("END SANITY CHECK REPORT\n\n");
+    printf("Error in Rtt calculation\n");
   }
 
   return status;
@@ -303,10 +302,6 @@ void parser_server(struct rte_mbuf *pkt)
   eth_hdr = rte_pktmbuf_mtod(pkt, struct rte_ether_hdr *);
   eth_type = eth_hdr->ether_type;
 
-  printf("%u %u \n", (unsigned int)RTE_ETHER_TYPE_IPV4, (unsigned int)rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4));
-
-  printf("Packet recieved, %u", (unsigned int)eth_type);
-
   if (eth_type == RTE_ETHER_TYPE_VLAN)
   {
     vlan_hdr = (struct rte_vlan_hdr *)((unsigned char *)(eth_hdr)); // eth + 1?
@@ -317,15 +312,17 @@ void parser_server(struct rte_mbuf *pkt)
   {
     ip_hdr = (struct rte_ipv4_hdr *)((unsigned char *)(eth_hdr + 1) + offset); // eth + 1?
 
-    rte_be32_t temp_ip;
+    char a, b, c, d;
+    uint32_t_to_char(rte_bswap32(ip_hdr->src_addr), &a, &b, &c, &d);
 
+    // printf("Packet received with ip: %u\n", );
+
+    rte_be32_t temp_ip;
     temp_ip = ip_hdr->dst_addr;
     ip_hdr->dst_addr = ip_hdr->src_addr;
     ip_hdr->src_addr = temp_ip;
 
     next_proto = ip_hdr->next_proto_id;
-
-    printf("parsed ip header\n");
 
     printf("%u\n", (unsigned int)next_proto);
 
@@ -352,7 +349,7 @@ void parser_server(struct rte_mbuf *pkt)
         icmp_hdr->icmp_cksum = rte_cpu_to_be_16(ck_sum((unaligned_uint16_t *)(icmp_hdr), sizeof(*icmp_hdr)));
       }
       int icmp_seq = rte_be_to_cpu_16(icmp_hdr->icmp_seq_nb);
-      printf("Icmp seq: %d\n", icmp_seq);
+      printf("with Icmp seq: %d\n", icmp_seq);
       break;
     }
     }
@@ -369,8 +366,8 @@ uint16_t add_icmp(struct rte_mbuf *pkt)
   icmp_hdr->icmp_type = RTE_IP_ICMP_ECHO_REQUEST;
   icmp_hdr->icmp_code = 0;
 
-  icmp_hdr->icmp_cksum = rte_cpu_to_be_16(ck_sum((unaligned_uint16_t *)(icmp_hdr), sizeof(*icmp_hdr))); // rte_cpu_to_be
-  icmp_hdr->icmp_ident = rte_cpu_to_be_16((uint16_t)getpid());                                          // generate randomly
+  icmp_hdr->icmp_cksum = rte_cpu_to_be_16(ck_sum((unaligned_uint16_t *)(icmp_hdr), sizeof(*icmp_hdr)));
+  icmp_hdr->icmp_ident = rte_cpu_to_be_16((uint16_t)getpid());
   icmp_hdr->icmp_seq_nb = rte_cpu_to_be_16(seq_nb);
 
   return (uint16_t)(sizeof(struct rte_icmp_hdr) + data_size);
@@ -452,6 +449,9 @@ void print_statistics(int signal_id)
 
   fprintf(stderr, "round-trip min/avg/max = %.2f/%.2f/%.2f ms\n",
           rtt_min, rtt_avg, rtt_max);
+
+  fprintf(stderr, "round-trip using tsc register min/avg/max = %.2f/%.2f/%.2f us\n",
+          rtt_min_tsc, rtt_avg_tsc, rtt_max_tsc);
 
   /* manage exit code */
 
