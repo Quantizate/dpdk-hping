@@ -77,7 +77,7 @@ float
     rtt_avg = 0,
     rtt_min_tsc = 0,
     rtt_max_tsc = 0,
-    rtt_avg_tsc = 0,
+    rtt_avg_tsc = 0
     ;
 
 int avg_counter = 0;
