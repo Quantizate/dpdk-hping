@@ -11,20 +11,20 @@ dpdk-hping is a network tool able to send ICMP packets, packets containing only 
 
 ## Base Options
 
--p: Port Id: 
-    The index of the port to be used by the DPDK driver for server or client. 
--c: client mode:
-    Run the host in client mode and give the MAC address of host as argument.
--s: server mode:
-    Run the host in server mode. 
--l: number of packets:
-    Number of packets to be sent. Default = flood.
--W: timeout:
-    Change timeout using this setting. Default = 2 secs
--a: server IP address:
-    Pass the server IP address as argument.
--b: client IP address:
-    Pass the client IP address as argument. 
+-p: Port Id: <br>
+    The index of the port to be used by the DPDK driver for server or client. <br>
+-c: client mode: <br>
+    Run the host in client mode and give the MAC address of host as argument.<br>
+-s: server mode:<br>
+    Run the host in server mode. <br>
+-l: number of packets:<br>
+    Number of packets to be sent. Default = flood.<br>
+-W: timeout:<br>
+    Change timeout using this setting. Default = 2 secs<br>
+-a: server IP address:<br>
+    Pass the server IP address as argument.<br>
+-b: client IP address:<br>
+    Pass the client IP address as argument. <br>
 ## How to setup?
 Configure DPDK.
 Bind your machine with DPDK-compatible driver. If using the same machine, bind two network interfaces to each machine. 
