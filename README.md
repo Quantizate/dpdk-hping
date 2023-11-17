@@ -32,6 +32,22 @@ dpdk-hping is a network tool able to send ICMP packets, packets containing only 
 -b: client IP address:<br>
     Pass the client IP address as argument. <br>
     <br>
+##Installation Guide
+Setup in MAC:<br>
+Download the 23.07 version of DPDK from https://core.dpdk.org/doc/quick-start/. <br>
+Follow the steps given in quick start guide and [https://doc.dpdk.org/guides/linux_gsg/sys_reqs.html#compilation-of-the-dpdk](https://doc.dpdk.org/guides/linux_gsg/index.html). <br>
+For Apple Silicon M1/M2 chips, follow the following commands:
+```
+sudo modprobe vfio-pci enable_sriov=1
+sudo mount -t hugetlbfs pagesize=1GB /mnt/huge
+for i in {1..50}; do sudo sh -c 'echo "1024" > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages'; done
+cat /sys/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages
+sudo dpdk-hugepages.py --reserve 1G
+sudo modprobe vfio enable_unsafe_noiommu_mode=1
+sudo chmod 666 /sys/bus/pci/drivers/vfio-pci/bind
+sudo ./<dpdk-23.07folder>/usertools/dpdk-devbind.py --bind=vfio-pci <network_interface>
+```
+
 ## How to setup?
 Configure DPDK.
 Bind your machine with DPDK-compatible driver. If using the same machine, bind two network interfaces to each machine. 
