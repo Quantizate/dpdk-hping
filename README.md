@@ -1,7 +1,7 @@
 # dpdk-hping
 
 ## Name
-hping3 - send ICMP packets
+hping3 - send ICMP packets that can calculate minimum/maximum and average RTTs for the number of packets sent. 
 
 ## Synopsis
 dpdk-hping [ -p port id ] [ -c client mode] [ -s server mode ] [ -l number of packets ] [ -W timeout ] [ -a server ip address ] [ -b client ip address ]
