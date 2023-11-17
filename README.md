@@ -46,7 +46,7 @@ sudo ./dpdk-hping --file-prefix client -a <network_interface> -- -c <server MAC 
 sudo ./dpdk-hping --file-prefix client -a <network_interface> -- -c <server MAC address>  -p 0 -W 5
 sudo ./dpdk-hping --file-prefix client -a <network_interface> -- -c <server MAC address>  -p 0 -a 10.0.0.1
 ```
-## Author
+## Authors
 Dhruv Gupta, Hirva Patel, Srujan Shetty, Dhruv Khandelwal
 
 ## References
