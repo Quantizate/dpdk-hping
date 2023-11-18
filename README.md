@@ -44,6 +44,7 @@ for i in {1..50}; do sudo sh -c 'echo "1024" > /sys/kernel/mm/hugepages/hugepage
 cat /sys/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages
 sudo dpdk-hugepages.py --reserve 1G
 sudo modprobe vfio enable_unsafe_noiommu_mode=1
+sudo sh -c 'echo "1" > /sys/module/vfio/parameters/enable_unsafe_noiommu_mode'
 sudo chmod 666 /sys/bus/pci/drivers/vfio-pci/bind
 sudo ./<dpdk-23.07folder>/usertools/dpdk-devbind.py --bind=vfio-pci <network_interface>
 ```
